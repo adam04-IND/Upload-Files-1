@@ -1,0 +1,224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Product Interest Form</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: 30px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+h2 {
+    text-align: center;
+    color: #2563eb;
+}
+
+label {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 15px;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.required {
+    color: red;
+}
+
+#descriptionContainer {
+    display: none;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 25px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.6;
+}
+
+#message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Customer Product Interest Form</h2>
+
+<form id="customerForm">
+
+<label>Name <span class="required">*</span></label>
+<input type="text" id="name" required placeholder="Enter your name">
+
+<label>Mobile No. <span class="required">*</span></label>
+<input type="tel" id="mobile"
+       maxlength="10"
+       inputmode="numeric"
+       pattern="[0-9]{10}"
+       oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+       required placeholder="Enter 10 digit mobile number">
+
+<label>Email <span class="required">*</span></label>
+<input type="email" id="email" required placeholder="Enter email">
+
+<label>Product Interest <span class="required">*</span></label>
+<select id="product" required>
+    <option value="">Select Product</option>
+    <option>Mobile</option>
+    <option>Tablet</option>
+    <option>Laptop</option>
+    <option>Computer</option>
+    <option>Monitors</option>
+    <option>Pods</option>
+</select>
+
+<label>Do you want to buy the product? <span class="required">*</span></label>
+<select id="buy" required>
+    <option value="">Select Yes or No</option>
+    <option value="Yes">Yes</option>
+    <option value="No">No</option>
+</select>
+
+<div id="descriptionContainer">
+    <label>Product Description</label>
+    <textarea id="description"
+       placeholder="Describe the product you want to buy"></textarea>
+</div>
+
+<button type="submit" id="submitBtn">Submit</button>
+
+</form>
+
+<div id="message"></div>
+
+</div>
+
+<script>
+
+const form = document.getElementById("customerForm");
+const buy = document.getElementById("buy");
+const descriptionContainer = document.getElementById("descriptionContainer");
+const description = document.getElementById("description");
+const message = document.getElementById("message");
+const submitBtn = document.getElementById("submitBtn");
+
+const WEBHOOK_URL = "https://adamr-2204.app.n8n.cloud/webhook-test/file:///C:/Users/eddy0/Desktop/Custom%20Form.html";
+
+// Show Field 6 only when Field 5 is Yes
+buy.addEventListener("change", function() {
+
+    if (buy.value === "Yes") {
+        descriptionContainer.style.display = "block";
+    } else {
+        descriptionContainer.style.display = "none";
+        description.value = "";
+    }
+
+});
+
+// Submit form data to n8n
+form.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const data = {
+        name: document.getElementById("name").value.trim(),
+        mobile: document.getElementById("mobile").value,
+        email: document.getElementById("email").value.trim(),
+        product: document.getElementById("product").value,
+        buy: buy.value,
+        description: buy.value === "Yes"
+            ? description.value.trim()
+            : ""
+    };
+
+    if (!/^[0-9]{10}$/.test(data.mobile)) {
+        message.style.color = "red";
+        message.textContent = "Enter a valid 10 digit mobile number.";
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    message.textContent = "";
+
+    try {
+
+        const response = await fetch(WEBHOOK_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error("Submission failed");
+        }
+
+        message.style.color = "green";
+        message.textContent = "Form submitted successfully!";
+
+        form.reset();
+        descriptionContainer.style.display = "none";
+
+    } catch(error) {
+
+        message.style.color = "red";
+        message.textContent = "Submission failed. Please try again.";
+        console.error(error);
+
+    } finally {
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
